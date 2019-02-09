@@ -1,6 +1,8 @@
+mod bar;
+mod bindings;
 mod client;
-mod gdk;
-mod wayland;
+
+const NAME: &str = env!("CARGO_PKG_NAME");
 
 fn main() {
     client::Client::new();

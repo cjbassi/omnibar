@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::bindings::wayland::{WlDisplay, WlSurface};
 use std::os::raw::{c_char, c_int};
 

@@ -1,10 +1,10 @@
 use crate::bar;
 use crate::bindings::gtk::{gdk_display_get_default, gdk_init, gdk_wayland_display_get_wl_display};
 use crate::bindings::wayland::{
-    wl_display_dispatch, wl_display_get_registry, wl_display_roundtrip, wl_registry_add_listener,
-    wl_registry_bind, WlOutput, WlOutputInterface, WlRegistry, WlRegistryListener,
+    wl_display_dispatch, wl_display_get_registry, wl_display_roundtrip, wl_output_interface,
+    wl_registry_add_listener, wl_registry_bind, WlOutput, WlRegistry, WlRegistryListener,
 };
-use crate::bindings::wlr::WlrLayerShell;
+use crate::bindings::wlr::{zwlr_layer_shell_v1_interface, WlrLayerShell};
 use libc::{c_void, uint32_t};
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -70,10 +70,18 @@ pub extern "C" fn handle_global(
     let interface = unsafe { CStr::from_ptr(interface) }.to_str().unwrap();
     match interface {
         "zwlr_layer_shell_v1" => {
-            // (*data).layer_shell = unsafe { wl_registry_bind(registry, name, interface, version) } as *mut zwlr_layer_shell_v1;
+            unsafe {
+                (*client).wlr_layer_shell =
+                    wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version)
+                        as *mut WlrLayerShell
+            };
         }
         "wl_output" => {
-            let output = unsafe { wl_registry_bind(registry, name, &WlOutputInterface, version) };
+            let output = unsafe { wl_registry_bind(registry, name, &wl_output_interface, version) };
+            if output.is_null() {
+                eprintln!("failed to bind to registry");
+                exit(1);
+            }
             bar::Bar::new(unsafe { &mut *client }, output as *mut WlOutput);
         }
         "wl_seat" => {}

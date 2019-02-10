@@ -1,8 +1,8 @@
 use crate::bindings::gtk::{
     gdk_wayland_window_get_wl_surface, gdk_wayland_window_set_use_custom_surface,
-    gtk_widget_get_window, gtk_widget_realize, gtk_widget_set_size_request, gtk_widget_show_all,
-    gtk_window_new, GtkWindowType,
+    gtk_widget_get_window, gtk_widget_realize, gtk_window_new, GtkWindowType,
 };
+//  gtk_widget_set_size_request, gtk_widget_show_all,
 use crate::bindings::wayland::{wl_surface_commit, WlOutput};
 use crate::bindings::wlr::{
     wlr_layer_shell_get_layer_surface, wlr_layer_surface_set_anchor,
@@ -12,8 +12,6 @@ use crate::client::Client;
 use crate::NAME;
 use std::ffi::CString;
 use std::process::exit;
-use std::thread;
-use std::time;
 
 pub struct Bar {}
 
@@ -47,7 +45,5 @@ impl Bar {
 
         // unsafe { gtk_widget_set_size_request(gtk_widget_ptr, 100, 100) };
         // unsafe { gtk_widget_show_all(gtk_widget_ptr) };
-
-        thread::sleep(time::Duration::from_secs(1));
     }
 }

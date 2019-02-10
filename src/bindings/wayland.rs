@@ -1,8 +1,12 @@
+#![allow(dead_code)]
+
 // https://stackoverflow.com/questions/50708059/why-is-rust-unable-to-find-wl-display-get-registry
 
 use libc::{c_void, uint32_t};
 use std::os::raw::{c_char, c_int, c_uint};
+use std::ptr::null_mut;
 
+const WL_REGISTRY_BIND: c_uint = 0;
 const WL_DISPLAY_GET_REGISTRY: c_uint = 1;
 const WL_SURFACE_COMMIT: c_uint = 6;
 
@@ -38,9 +42,11 @@ pub struct WlInterface {
 #[link(name = "wayland-client")]
 extern "C" {
     #[no_mangle]
-    pub static WlRegistryInterface: WlInterface;
+    pub static wl_registry_interface: WlInterface;
     #[no_mangle]
-    pub static WlOutputInterface: WlInterface;
+    pub static wl_output_interface: WlInterface;
+    #[no_mangle]
+    pub static wl_surface_interface: WlInterface;
 
     pub fn wl_display_connect(name: *const c_char) -> *mut WlDisplay;
     pub fn wl_display_disconnect(display: *mut WlDisplay);
@@ -49,13 +55,13 @@ extern "C" {
     pub fn wl_display_roundtrip(display: *mut WlDisplay) -> c_int;
 
     pub fn wl_proxy_marshal(proxy: *mut WlProxy, opcode: uint32_t, ...);
-
-    pub fn wl_registry_bind(
-        wl_registry: *mut WlRegistry,
-        name: uint32_t,
+    pub fn wl_proxy_marshal_constructor_versioned(
+        proxy: *mut WlProxy,
+        opcode: uint32_t,
         interface: *const WlInterface,
         version: uint32_t,
-    ) -> *mut c_void;
+        ...
+    ) -> *mut WlProxy;
 
     pub fn wl_proxy_add_listener(
         proxy: *mut WlProxy,
@@ -71,6 +77,29 @@ extern "C" {
     ) -> *mut WlProxy;
 }
 
+pub fn wl_registry_bind(
+    wl_registry: *mut WlRegistry,
+    name: uint32_t,
+    interface: *const WlInterface,
+    version: uint32_t,
+) -> *mut c_void {
+    let id: *mut WlProxy;
+
+    unsafe {
+        id = wl_proxy_marshal_constructor_versioned(
+            wl_registry as *mut _ as *mut WlProxy,
+            WL_REGISTRY_BIND,
+            interface,
+            version,
+            name,
+            (*interface).name,
+            version,
+            null_mut::<WlProxy>(),
+        );
+        id as *mut c_void
+    }
+}
+
 pub unsafe fn wl_surface_commit(surface: *mut WlSurface) {
     wl_proxy_marshal(surface as *mut WlProxy, WL_SURFACE_COMMIT);
 }
@@ -81,24 +110,24 @@ pub fn wl_registry_add_listener(
     data: *mut c_void,
 ) -> c_int {
     unsafe {
-        return wl_proxy_add_listener(
+        wl_proxy_add_listener(
             wl_registry as *mut _ as *mut WlProxy,
             listener as *const _,
             data,
-        );
+        )
     }
 }
 
 pub fn wl_display_get_registry(display: *mut WlDisplay) -> *mut WlRegistry {
-    let proxy: *mut WlProxy;
+    let registry: *mut WlProxy;
 
     unsafe {
-        proxy = wl_proxy_marshal_constructor(
+        registry = wl_proxy_marshal_constructor(
             display as *mut _ as *mut WlProxy,
             WL_DISPLAY_GET_REGISTRY,
-            &WlRegistryInterface,
+            &wl_registry_interface,
         );
-        proxy as *mut _ as *mut WlRegistry
+        registry as *mut _ as *mut WlRegistry
     }
 }
 

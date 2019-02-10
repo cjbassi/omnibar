@@ -27,6 +27,8 @@ extern "C" {
 
 #[link(name = "gtk-3")]
 extern "C" {
+    pub fn gtk_main();
+
     pub fn gtk_window_new(type_: GtkWindowType) -> *mut GtkWidget;
     pub fn gtk_widget_realize(widget: *mut GtkWidget);
     pub fn gtk_widget_get_window(widget: *mut GtkWidget) -> *mut GdkWindow;

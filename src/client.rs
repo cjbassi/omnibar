@@ -1,5 +1,7 @@
 use crate::bar;
-use crate::bindings::gtk::{gdk_display_get_default, gdk_init, gdk_wayland_display_get_wl_display};
+use crate::bindings::gtk::{
+    gdk_display_get_default, gdk_init, gdk_wayland_display_get_wl_display, gtk_main,
+};
 use crate::bindings::wayland::{
     wl_display_dispatch, wl_display_get_registry, wl_display_roundtrip, wl_output_interface,
     wl_registry_add_listener, wl_registry_bind, WlOutput, WlRegistry, WlRegistryListener,
@@ -50,6 +52,7 @@ impl Client {
             eprintln!("failed display roundtrip");
             exit(1);
         }
+        unsafe { gtk_main() };
 
         // Client {
         // gdk_display,

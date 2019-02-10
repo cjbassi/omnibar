@@ -34,37 +34,39 @@ impl Bar {
         };
 
         let height = 50;
-        let layer_surface = wlr_layer_shell_get_layer_surface(
-            client.wlr_layer_shell,
-            wl_surface_ptr,
-            wl_output,
-            WlrLayerShellLayer::Top,
-            CString::new(NAME).unwrap().as_ptr(),
-        );
+        let layer_surface = unsafe {
+            wlr_layer_shell_get_layer_surface(
+                client.wlr_layer_shell,
+                wl_surface_ptr,
+                wl_output,
+                WlrLayerShellLayer::Top,
+                CString::new(NAME).unwrap().as_ptr(),
+            )
+        };
         let anchor = WlrLayerSurfaceAnchor::Left
             | WlrLayerSurfaceAnchor::Right
             | WlrLayerSurfaceAnchor::Bottom;
-        wlr_layer_surface_set_anchor(layer_surface, anchor);
-        wlr_layer_surface_set_exclusive_zone(layer_surface, height);
+        unsafe { wlr_layer_surface_set_anchor(layer_surface, anchor) };
+        unsafe { wlr_layer_surface_set_exclusive_zone(layer_surface, height) };
 
         unsafe { wl_surface_commit(wl_surface_ptr) };
 
         // unsafe { gtk_widget_set_size_request(gtk_widget_ptr, 1920, 50) };
-        unsafe {
-            gtk_sys::gtk_window_set_default_size(
-                gtk_widget_ptr as *mut gtk_sys::GtkWindow,
-                1920,
-                50,
-            )
-        };
+        // unsafe {
+        //     gtk_sys::gtk_window_set_default_size(
+        //         gtk_widget_ptr as *mut gtk_sys::GtkWindow,
+        //         1920,
+        //         50,
+        //     )
+        // };
 
-        let button = unsafe { gtk_button_new_with_label(CString::new("hello").unwrap().as_ptr()) };
-        unsafe { gtk_container_add(gdk_window_ptr as *mut gtk_sys::GtkContainer, button) };
+        // let button = unsafe { gtk_button_new_with_label(CString::new("hello").unwrap().as_ptr()) };
+        // unsafe { gtk_container_add(gtk_widget_ptr as *mut gtk_sys::GtkContainer, button) };
 
-        unsafe { wl_surface_commit(wl_surface_ptr) };
+        // unsafe { wl_surface_commit(wl_surface_ptr) };
 
-        unsafe { gtk_widget_show_all(gtk_widget_ptr) };
+        // unsafe { gtk_widget_show_all(gtk_widget_ptr) };
 
-        unsafe { wl_surface_commit(wl_surface_ptr) };
+        // unsafe { wl_surface_commit(wl_surface_ptr) };
     }
 }

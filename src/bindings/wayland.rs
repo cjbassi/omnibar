@@ -77,56 +77,40 @@ extern "C" {
     ) -> *mut WlProxy;
 }
 
-pub fn wl_registry_bind(
+pub unsafe fn wl_registry_bind(
     wl_registry: *mut WlRegistry,
     name: uint32_t,
     interface: *const WlInterface,
     version: uint32_t,
 ) -> *mut c_void {
-    let id: *mut WlProxy;
-
-    unsafe {
-        id = wl_proxy_marshal_constructor_versioned(
-            wl_registry as *mut _ as *mut WlProxy,
-            WL_REGISTRY_BIND,
-            interface,
-            version,
-            name,
-            (*interface).name,
-            version,
-            null_mut::<WlProxy>(),
-        );
-        id as *mut c_void
-    }
+    wl_proxy_marshal_constructor_versioned(
+        wl_registry as *mut _ as *mut WlProxy,
+        WL_REGISTRY_BIND,
+        interface,
+        version,
+        name,
+        (*interface).name,
+        version,
+        null_mut::<WlProxy>(),
+    ) as *mut c_void
 }
 
 pub unsafe fn wl_surface_commit(surface: *mut WlSurface) {
     wl_proxy_marshal(surface as *mut WlProxy, WL_SURFACE_COMMIT);
 }
 
-pub fn wl_registry_add_listener(
+pub unsafe fn wl_registry_add_listener(
     wl_registry: *mut WlRegistry,
     listener: *const WlRegistryListener,
     data: *mut c_void,
 ) -> c_int {
-    unsafe {
-        wl_proxy_add_listener(
-            wl_registry as *mut _ as *mut WlProxy,
-            listener as *const _,
-            data,
-        )
-    }
+    wl_proxy_add_listener(wl_registry as *mut WlProxy, listener as *const _, data)
 }
 
-pub fn wl_display_get_registry(display: *mut WlDisplay) -> *mut WlRegistry {
-    let registry: *mut WlProxy;
-
-    unsafe {
-        registry = wl_proxy_marshal_constructor(
-            display as *mut _ as *mut WlProxy,
-            WL_DISPLAY_GET_REGISTRY,
-            &wl_registry_interface,
-        );
-        registry as *mut _ as *mut WlRegistry
-    }
+pub unsafe fn wl_display_get_registry(display: *mut WlDisplay) -> *mut WlRegistry {
+    wl_proxy_marshal_constructor(
+        display as *mut WlProxy,
+        WL_DISPLAY_GET_REGISTRY,
+        &wl_registry_interface,
+    ) as *mut WlRegistry
 }

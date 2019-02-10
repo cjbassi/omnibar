@@ -41,52 +41,43 @@ pub enum WlrLayerShellLayer {
     Overlay = 3,
 }
 
-pub fn wlr_layer_shell_get_layer_surface(
+pub unsafe fn wlr_layer_shell_get_layer_surface(
     wlr_layer_shell: *mut WlrLayerShell,
     surface: *mut WlSurface,
     output: *mut WlOutput,
     layer: WlrLayerShellLayer,
     np: *const c_char,
 ) -> *mut WlrLayerSurface {
-    let proxy: *mut WlProxy;
-
-    unsafe {
-        proxy = wl_proxy_marshal_constructor(
-            wlr_layer_shell as *mut _ as *mut WlProxy,
-            WLR_LAYER_SHELL_GET_LAYER_SURFACE,
-            &zwlr_layer_surface_v1_interface,
-            null_mut::<WlProxy>(),
-            surface,
-            output,
-            layer,
-            np,
-        );
-        proxy as *mut _ as *mut WlrLayerSurface
-    }
+    wl_proxy_marshal_constructor(
+        wlr_layer_shell as *mut WlProxy,
+        WLR_LAYER_SHELL_GET_LAYER_SURFACE,
+        &zwlr_layer_surface_v1_interface,
+        null_mut::<WlProxy>(),
+        surface,
+        output,
+        layer,
+        np,
+    ) as *mut WlrLayerSurface
 }
 
-pub fn wlr_layer_surface_set_anchor(
+pub unsafe fn wlr_layer_surface_set_anchor(
     wlr_layer_surface: *mut WlrLayerSurface,
     anchor: WlrLayerSurfaceAnchor,
 ) {
-    unsafe {
-        wl_proxy_marshal(
-            wlr_layer_surface as *mut WlProxy,
-            WLR_LAYER_SURFACE_SET_ANCHOR,
-            anchor,
-        )
-    };
+    wl_proxy_marshal(
+        wlr_layer_surface as *mut WlProxy,
+        WLR_LAYER_SURFACE_SET_ANCHOR,
+        anchor,
+    )
 }
 
-pub fn wlr_layer_surface_set_exclusive_zone(
+pub unsafe fn wlr_layer_surface_set_exclusive_zone(
     wlr_layer_surface: *mut WlrLayerSurface,
     zone: int32_t,
 ) {
-    unsafe {
-        wl_proxy_marshal(
-            wlr_layer_surface as *mut WlProxy,
-            WLR_LAYER_SURFACE_SET_EXCLUSIVE_ZONE,
-            zone,
-        )
-    };
+    wl_proxy_marshal(
+        wlr_layer_surface as *mut WlProxy,
+        WLR_LAYER_SURFACE_SET_EXCLUSIVE_ZONE,
+        zone,
+    )
 }

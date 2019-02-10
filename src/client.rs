@@ -27,7 +27,7 @@ impl Client {
         let wl_display = unsafe {
             gdk_wayland_display_get_wl_display(gdk_display as *mut gdk_wayland::GdkDisplay)
         };
-        let registry = wl_display_get_registry(wl_display);
+        let registry = unsafe { wl_display_get_registry(wl_display) };
         if registry.is_null() {
             eprintln!("failed to get registry");
             exit(1);
@@ -35,11 +35,13 @@ impl Client {
         let mut client = Client {
             wlr_layer_shell: null_mut(),
         };
-        let error = wl_registry_add_listener(
-            registry,
-            &WL_REGISTRY_LISTENER as *const WlRegistryListener,
-            &mut client as *mut _ as *mut c_void,
-        );
+        let error = unsafe {
+            wl_registry_add_listener(
+                registry,
+                &WL_REGISTRY_LISTENER as *const WlRegistryListener,
+                &mut client as *mut _ as *mut c_void,
+            )
+        };
         if error == -1 {
             eprintln!("failed to add registry_listener");
             exit(1);

@@ -130,16 +130,3 @@ pub fn wl_display_get_registry(display: *mut WlDisplay) -> *mut WlRegistry {
         registry as *mut _ as *mut WlRegistry
     }
 }
-
-// #[repr(C)]
-// pub struct WlOutputInterface {
-//     pub release: *const c_void,
-// }
-
-// pub const WL_OUTPUT_INTERFACE: WlOutputInterface = WlOutputInterface {};
-
-// #[repr(C)]
-// pub struct WlRegistryListener {
-//     global: *const Fn(*mut c_void, *mut WlRegistry, uint32_t, *const c_char, uint32_t),
-//     global_remove: *const Fn(*mut c_void, *mut WlRegistry, uint32_t),
-// }

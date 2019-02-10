@@ -1,12 +1,12 @@
 use crate::bar;
-use crate::bindings::gtk::{
-    gdk_display_get_default, gdk_init, gdk_wayland_display_get_wl_display, gtk_main,
-};
+use crate::bindings::gdk_wayland::{self, gdk_wayland_display_get_wl_display};
 use crate::bindings::wayland::{
     wl_display_dispatch, wl_display_get_registry, wl_display_roundtrip, wl_output_interface,
     wl_registry_add_listener, wl_registry_bind, WlOutput, WlRegistry, WlRegistryListener,
 };
 use crate::bindings::wlr::{zwlr_layer_shell_v1_interface, WlrLayerShell};
+use gdk_sys::{gdk_display_get_default, gdk_init};
+use gtk_sys::gtk_main;
 use libc::{c_void, uint32_t};
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -24,7 +24,9 @@ impl Client {
     pub fn new() {
         unsafe { gdk_init(null_mut(), null_mut()) };
         let gdk_display = unsafe { gdk_display_get_default() };
-        let wl_display = unsafe { gdk_wayland_display_get_wl_display(gdk_display) };
+        let wl_display = unsafe {
+            gdk_wayland_display_get_wl_display(gdk_display as *mut gdk_wayland::GdkDisplay)
+        };
         let registry = wl_display_get_registry(wl_display);
         if registry.is_null() {
             eprintln!("failed to get registry");

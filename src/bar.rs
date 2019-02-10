@@ -1,8 +1,6 @@
-use crate::bindings::gtk::{
-    gdk_wayland_window_get_wl_surface, gdk_wayland_window_set_use_custom_surface,
-    gtk_widget_get_window, gtk_widget_realize, gtk_window_new, GtkWindowType,
+use crate::bindings::gdk_wayland::{
+    self, gdk_wayland_window_get_wl_surface, gdk_wayland_window_set_use_custom_surface,
 };
-//  gtk_widget_set_size_request, gtk_widget_show_all,
 use crate::bindings::wayland::{wl_surface_commit, WlOutput};
 use crate::bindings::wlr::{
     wlr_layer_shell_get_layer_surface, wlr_layer_surface_set_anchor,
@@ -10,6 +8,10 @@ use crate::bindings::wlr::{
 };
 use crate::client::Client;
 use crate::NAME;
+use gtk_sys::{
+    gtk_button_new_with_label, gtk_container_add, gtk_widget_get_window, gtk_widget_realize,
+    gtk_widget_show_all, gtk_window_new, GTK_WINDOW_TOPLEVEL,
+};
 use std::ffi::CString;
 use std::process::exit;
 
@@ -17,15 +19,19 @@ pub struct Bar {}
 
 impl Bar {
     pub fn new(client: &mut Client, wl_output: *mut WlOutput) {
-        let gtk_widget_ptr = unsafe { gtk_window_new(GtkWindowType::TopLevel) };
+        let gtk_widget_ptr = unsafe { gtk_window_new(GTK_WINDOW_TOPLEVEL) };
         unsafe { gtk_widget_realize(gtk_widget_ptr) };
         let gdk_window_ptr = unsafe { gtk_widget_get_window(gtk_widget_ptr) };
         if gdk_window_ptr.is_null() {
             eprintln!("failed to get window of gtk widget");
             exit(1);
         }
-        unsafe { gdk_wayland_window_set_use_custom_surface(gdk_window_ptr) };
-        let wl_surface_ptr = unsafe { gdk_wayland_window_get_wl_surface(gdk_window_ptr) };
+        unsafe {
+            gdk_wayland_window_set_use_custom_surface(gdk_window_ptr as *mut gdk_wayland::GdkWindow)
+        };
+        let wl_surface_ptr = unsafe {
+            gdk_wayland_window_get_wl_surface(gdk_window_ptr as *mut gdk_wayland::GdkWindow)
+        };
 
         let height = 50;
         let layer_surface = wlr_layer_shell_get_layer_surface(
@@ -43,7 +49,22 @@ impl Bar {
 
         unsafe { wl_surface_commit(wl_surface_ptr) };
 
-        // unsafe { gtk_widget_set_size_request(gtk_widget_ptr, 100, 100) };
-        // unsafe { gtk_widget_show_all(gtk_widget_ptr) };
+        // unsafe { gtk_widget_set_size_request(gtk_widget_ptr, 1920, 50) };
+        unsafe {
+            gtk_sys::gtk_window_set_default_size(
+                gtk_widget_ptr as *mut gtk_sys::GtkWindow,
+                1920,
+                50,
+            )
+        };
+
+        let button = unsafe { gtk_button_new_with_label(CString::new("hello").unwrap().as_ptr()) };
+        unsafe { gtk_container_add(gdk_window_ptr as *mut gtk_sys::GtkContainer, button) };
+
+        unsafe { wl_surface_commit(wl_surface_ptr) };
+
+        unsafe { gtk_widget_show_all(gtk_widget_ptr) };
+
+        unsafe { wl_surface_commit(wl_surface_ptr) };
     }
 }

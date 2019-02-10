@@ -1,6 +1,6 @@
-#![allow(dead_code)]
-
 // https://stackoverflow.com/questions/50708059/why-is-rust-unable-to-find-wl-display-get-registry
+
+#![allow(dead_code)]
 
 use libc::{c_void, uint32_t};
 use std::os::raw::{c_char, c_int, c_uint};

@@ -5,6 +5,9 @@ use crate::bindings::wayland::{
     wl_registry_add_listener, wl_registry_bind, WlOutput, WlRegistry, WlRegistryListener,
 };
 use crate::bindings::wlr::{zwlr_layer_shell_v1_interface, WlrLayerShell};
+use crate::bindings::xdg::{
+    zxdg_output_manager_v1_interface, XdgOutputManager, ZXDG_OUTPUT_V1_NAME_SINCE_VERSION,
+};
 use gdk_sys::{gdk_display_get_default, gdk_init};
 use gtk_sys::gtk_main;
 use libc::{c_void, uint32_t};
@@ -16,6 +19,8 @@ use std::ptr::null_mut;
 #[repr(C)]
 pub struct Client {
     pub wlr_layer_shell: *mut WlrLayerShell,
+    pub xdg_output_manager: *mut XdgOutputManager,
+    bar: Option<bar::Bar>,
     // gdk_display: *mut GdkDisplay,
     // wl_display: *mut WlDisplay,
 }
@@ -34,6 +39,8 @@ impl Client {
         }
         let mut client = Client {
             wlr_layer_shell: null_mut(),
+            xdg_output_manager: null_mut(),
+            bar: None,
         };
         let error = unsafe {
             wl_registry_add_listener(
@@ -66,7 +73,7 @@ impl Client {
 }
 
 #[no_mangle]
-pub extern "C" fn handle_global(
+pub extern "C" fn wl_handle_global(
     data: *mut libc::c_void,
     registry: *mut WlRegistry,
     name: libc::uint32_t,
@@ -89,16 +96,28 @@ pub extern "C" fn handle_global(
                 eprintln!("failed to bind to registry");
                 exit(1);
             }
-            bar::Bar::new(unsafe { &mut *client }, output as *mut WlOutput);
+            unsafe {
+                (*client).bar = Some(bar::Bar::new(
+                    unsafe { &mut *client },
+                    output as *mut WlOutput,
+                ))
+            };
         }
         "wl_seat" => {}
-        "zxdg_output_manager_v1" => {}
+        "zxdg_output_manager_v1" => unsafe {
+            (*client).xdg_output_manager = wl_registry_bind(
+                registry,
+                name,
+                &zxdg_output_manager_v1_interface,
+                ZXDG_OUTPUT_V1_NAME_SINCE_VERSION,
+            ) as *mut XdgOutputManager
+        },
         _ => {}
     }
 }
 
 #[no_mangle]
-pub extern "C" fn handle_global_remove(
+pub extern "C" fn wl_handle_global_remove(
     _data: *mut c_void,
     _registry: *mut WlRegistry,
     _name: uint32_t,
@@ -106,8 +125,8 @@ pub extern "C" fn handle_global_remove(
 }
 
 pub const WL_REGISTRY_LISTENER: WlRegistryListener = WlRegistryListener {
-    global: handle_global as *const _,
-    global_remove: handle_global_remove as *const _,
+    global: wl_handle_global as *const _,
+    global_remove: wl_handle_global_remove as *const _,
 };
 
 // gdk::init();

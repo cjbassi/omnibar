@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 
 use crate::bindings::wayland::{
-    wl_proxy_marshal, wl_proxy_marshal_constructor, WlInterface, WlOutput, WlProxy, WlSurface,
+    wl_proxy_add_listener, wl_proxy_marshal, wl_proxy_marshal_constructor, WlInterface, WlOutput,
+    WlProxy, WlSurface,
 };
 use bitflags::bitflags;
-use libc::int32_t;
-use std::os::raw::{c_char, c_uint};
+use libc::{int32_t, uint32_t};
+use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::ptr::null_mut;
 
 pub enum WlrLayerShell {}
@@ -15,6 +16,15 @@ const WLR_LAYER_SHELL_GET_LAYER_SURFACE: c_uint = 0;
 
 const WLR_LAYER_SURFACE_SET_ANCHOR: c_uint = 1;
 const WLR_LAYER_SURFACE_SET_EXCLUSIVE_ZONE: c_uint = 2;
+
+const ZWLR_LAYER_SURFACE_V1_SET_SIZE: c_uint = 0;
+const ZWLR_LAYER_SURFACE_V1_ACK_CONFIGURE: c_uint = 6;
+
+#[repr(C)]
+pub struct WlrLayerSurfaceListener {
+    pub configure: *const c_void,
+    pub closed: *const c_void,
+}
 
 #[link(name = "client_protos")]
 extern "C" {
@@ -48,6 +58,10 @@ pub unsafe fn wlr_layer_shell_get_layer_surface(
     layer: WlrLayerShellLayer,
     np: *const c_char,
 ) -> *mut WlrLayerSurface {
+    dbg!(wlr_layer_shell);
+    dbg!(surface);
+    dbg!(output);
+    dbg!(np);
     wl_proxy_marshal_constructor(
         wlr_layer_shell as *mut WlProxy,
         WLR_LAYER_SHELL_GET_LAYER_SURFACE,
@@ -60,7 +74,7 @@ pub unsafe fn wlr_layer_shell_get_layer_surface(
     ) as *mut WlrLayerSurface
 }
 
-pub unsafe fn wlr_layer_surface_set_anchor(
+pub unsafe fn zwlr_layer_surface_v1_set_anchor(
     wlr_layer_surface: *mut WlrLayerSurface,
     anchor: WlrLayerSurfaceAnchor,
 ) {
@@ -71,7 +85,7 @@ pub unsafe fn wlr_layer_surface_set_anchor(
     )
 }
 
-pub unsafe fn wlr_layer_surface_set_exclusive_zone(
+pub unsafe fn zwlr_layer_surface_v1_set_exclusive_zone(
     wlr_layer_surface: *mut WlrLayerSurface,
     zone: int32_t,
 ) {
@@ -80,4 +94,33 @@ pub unsafe fn wlr_layer_surface_set_exclusive_zone(
         WLR_LAYER_SURFACE_SET_EXCLUSIVE_ZONE,
         zone,
     )
+}
+
+pub unsafe fn zwlr_layer_surface_v1_ack_configure(surface: *mut WlrLayerSurface, serial: uint32_t) {
+    wl_proxy_marshal(
+        surface as *mut WlProxy,
+        ZWLR_LAYER_SURFACE_V1_ACK_CONFIGURE,
+        serial,
+    );
+}
+
+pub unsafe fn zwlr_layer_surface_v1_set_size(
+    surface: *mut WlrLayerSurface,
+    width: uint32_t,
+    height: uint32_t,
+) {
+    wl_proxy_marshal(
+        surface as *mut WlProxy,
+        ZWLR_LAYER_SURFACE_V1_SET_SIZE,
+        width,
+        height,
+    );
+}
+
+pub unsafe fn zwlr_layer_surface_v1_add_listener(
+    surface: *mut WlrLayerSurface,
+    listener: *const WlrLayerSurfaceListener,
+    data: *mut c_void,
+) -> c_int {
+    wl_proxy_add_listener(surface as *mut WlProxy, listener as *const c_void, data)
 }

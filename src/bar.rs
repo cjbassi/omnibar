@@ -12,16 +12,20 @@ use crate::bindings::xdg::{
     zxdg_output_manager_v1_get_xdg_output, zxdg_output_v1_add_listener, XdgOutput,
     XdgOutputListener,
 };
+use crate::check_null;
 use crate::client::CLIENT;
 use crate::NAME;
+
 use gtk_sys::{
     self, gtk_widget_get_window, gtk_widget_realize, gtk_widget_set_size_request,
     gtk_widget_show_all, gtk_window_new, gtk_window_resize, GTK_WINDOW_TOPLEVEL,
 };
+
 use lazy_static::lazy_static;
+
 use libc::{c_char, c_void, int32_t, uint32_t};
+
 use std::ffi::CString;
-use std::process::exit;
 use std::ptr::null_mut;
 use std::sync::Mutex;
 
@@ -33,36 +37,37 @@ pub struct Bar {
     widget: *mut gtk_sys::GtkWidget,
     surface: *mut WlSurface,
     output: *mut WlOutput,
+    width: u32,
+    height: u32,
 }
 
 unsafe impl Send for Bar {}
 
 pub fn init(wl_output: *mut WlOutput) {
     let gtk_widget_ptr = unsafe { gtk_window_new(GTK_WINDOW_TOPLEVEL) };
+    check_null!(gtk_widget_ptr);
     unsafe { gtk_widget_realize(gtk_widget_ptr) };
     let gdk_window_ptr = unsafe { gtk_widget_get_window(gtk_widget_ptr) };
-    if gdk_window_ptr.is_null() {
-        eprintln!("failed to get window of gtk widget");
-        exit(1);
-    }
+    check_null!(gdk_window_ptr);
     unsafe {
         gdk_wayland_window_set_use_custom_surface(gdk_window_ptr as *mut gdk_wayland::GdkWindow)
     };
     let wl_surface_ptr =
         unsafe { gdk_wayland_window_get_wl_surface(gdk_window_ptr as *mut gdk_wayland::GdkWindow) };
+    check_null!(wl_surface_ptr);
 
     BARS.lock().unwrap().push(Bar {
         widget: gtk_widget_ptr,
         surface: wl_surface_ptr,
         output: wl_output,
+        width: 1920,
+        height: 50,
     });
 
     let xdg_output = unsafe {
         zxdg_output_manager_v1_get_xdg_output(CLIENT.lock().unwrap().xdg_output_manager, wl_output)
     };
-    if xdg_output.is_null() {
-        exit(1);
-    }
+    check_null!(xdg_output);
     unsafe {
         zxdg_output_v1_add_listener(
             xdg_output,
@@ -102,9 +107,6 @@ pub extern "C" fn xdg_handle_name(
 ) {
     let bar = &BARS.lock().unwrap()[0];
 
-    let width = 1920;
-    let height = 50;
-
     let layer_surface = unsafe {
         wlr_layer_shell_get_layer_surface(
             CLIENT.lock().unwrap().wlr_layer_shell,
@@ -114,6 +116,7 @@ pub extern "C" fn xdg_handle_name(
             CString::new(NAME).unwrap().as_ptr(),
         )
     };
+    check_null!(layer_surface);
 
     unsafe {
         zwlr_layer_surface_v1_add_listener(
@@ -126,8 +129,8 @@ pub extern "C" fn xdg_handle_name(
     let anchor =
         WlrLayerSurfaceAnchor::Left | WlrLayerSurfaceAnchor::Right | WlrLayerSurfaceAnchor::Bottom;
     unsafe { zwlr_layer_surface_v1_set_anchor(layer_surface, anchor) };
-    unsafe { zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, height) };
-    unsafe { zwlr_layer_surface_v1_set_size(layer_surface, width, height as u32) };
+    unsafe { zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, bar.height as i32) };
+    unsafe { zwlr_layer_surface_v1_set_size(layer_surface, bar.width, bar.height) };
 
     unsafe { wl_surface_commit(bar.surface) };
 
@@ -158,6 +161,7 @@ pub extern "C" fn wlr_layer_surface_configure(
     w: uint32_t,
     h: uint32_t,
 ) {
+    check_null!(surface);
     let bar = &BARS.lock().unwrap()[0];
     unsafe { zwlr_layer_surface_v1_ack_configure(surface, serial) };
     unsafe { gtk_widget_set_size_request(bar.widget, w as int32_t, h as int32_t) };

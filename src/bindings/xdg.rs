@@ -3,7 +3,9 @@
 use crate::bindings::wayland::{
     wl_proxy_add_listener, wl_proxy_marshal_constructor, WlInterface, WlOutput, WlProxy,
 };
+
 use libc::c_void;
+
 use std::os::raw::{c_int, c_uint};
 use std::ptr::null_mut;
 

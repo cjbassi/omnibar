@@ -35,3 +35,5 @@ Check out the [wiki](https://github.com/cjbassi/omnibar/wiki) for info on how to
 
 - figure out if there's a better way to include the wlroots static library
 - figure out if there's a better way to setup the FFI bindings
+- rename variables like: 'gdk_surface_ptr'
+- fix zwlr/wlr etc

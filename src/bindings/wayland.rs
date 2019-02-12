@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 
 use libc::{c_void, uint32_t};
+
 use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::null_mut;
 

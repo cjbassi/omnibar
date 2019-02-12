@@ -4,8 +4,11 @@ use crate::bindings::wayland::{
     wl_proxy_add_listener, wl_proxy_marshal, wl_proxy_marshal_constructor, WlInterface, WlOutput,
     WlProxy, WlSurface,
 };
+
 use bitflags::bitflags;
+
 use libc::{int32_t, uint32_t};
+
 use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::ptr::null_mut;
 
@@ -14,10 +17,9 @@ pub enum WlrLayerSurface {}
 
 const WLR_LAYER_SHELL_GET_LAYER_SURFACE: c_uint = 0;
 
+const ZWLR_LAYER_SURFACE_V1_SET_SIZE: c_uint = 0;
 const WLR_LAYER_SURFACE_SET_ANCHOR: c_uint = 1;
 const WLR_LAYER_SURFACE_SET_EXCLUSIVE_ZONE: c_uint = 2;
-
-const ZWLR_LAYER_SURFACE_V1_SET_SIZE: c_uint = 0;
 const ZWLR_LAYER_SURFACE_V1_ACK_CONFIGURE: c_uint = 6;
 
 #[repr(C)]

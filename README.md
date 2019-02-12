@@ -30,3 +30,8 @@ bash <(curl https://raw.githubusercontent.com/japaric/trust/c268696ab9f054e1092f
 ## Configuration
 
 Check out the [wiki](https://github.com/cjbassi/omnibar/wiki) for info on how to customize and style omnibar and for a list of available modules.
+
+## TODO
+
+- figure out if there's a better way to include the wlroots static library
+- figure out if there's a better way to setup the FFI bindings

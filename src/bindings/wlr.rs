@@ -58,10 +58,6 @@ pub unsafe fn wlr_layer_shell_get_layer_surface(
     layer: WlrLayerShellLayer,
     np: *const c_char,
 ) -> *mut WlrLayerSurface {
-    dbg!(wlr_layer_shell);
-    dbg!(surface);
-    dbg!(output);
-    dbg!(np);
     wl_proxy_marshal_constructor(
         wlr_layer_shell as *mut WlProxy,
         WLR_LAYER_SHELL_GET_LAYER_SURFACE,

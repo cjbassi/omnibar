@@ -10,19 +10,27 @@ use crate::bindings::xdg::{
 };
 use gdk_sys::{gdk_display_get_default, gdk_init};
 use gtk_sys::gtk_main;
+use lazy_static::lazy_static;
 use libc::{c_void, uint32_t};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::process::exit;
 use std::ptr::null_mut;
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref CLIENT: Mutex<Client> = Mutex::new(Client {
+        wlr_layer_shell: null_mut(),
+        xdg_output_manager: null_mut(),
+    });
+}
+
+unsafe impl Send for Client {}
 
 #[repr(C)]
 pub struct Client {
     pub wlr_layer_shell: *mut WlrLayerShell,
     pub xdg_output_manager: *mut XdgOutputManager,
-    bar: Option<bar::Bar>,
-    // gdk_display: *mut GdkDisplay,
-    // wl_display: *mut WlDisplay,
 }
 
 impl Client {
@@ -37,16 +45,11 @@ impl Client {
             eprintln!("failed to get registry");
             exit(1);
         }
-        let mut client = Client {
-            wlr_layer_shell: null_mut(),
-            xdg_output_manager: null_mut(),
-            bar: None,
-        };
         let error = unsafe {
             wl_registry_add_listener(
                 registry,
                 &WL_REGISTRY_LISTENER as *const WlRegistryListener,
-                &mut client as *mut _ as *mut c_void,
+                null_mut(),
             )
         };
         if error == -1 {
@@ -64,31 +67,23 @@ impl Client {
             exit(1);
         }
         unsafe { gtk_main() };
-
-        // Client {
-        // gdk_display,
-        // wl_display,
-        // };
     }
 }
 
 #[no_mangle]
 pub extern "C" fn wl_handle_global(
-    data: *mut libc::c_void,
+    _data: *mut libc::c_void,
     registry: *mut WlRegistry,
     name: libc::uint32_t,
     interface: *const c_char,
     version: libc::uint32_t,
 ) {
-    let client = data as *mut Client;
     let interface = unsafe { CStr::from_ptr(interface) }.to_str().unwrap();
     match interface {
         "zwlr_layer_shell_v1" => {
-            unsafe {
-                (*client).wlr_layer_shell =
-                    wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version)
-                        as *mut WlrLayerShell
-            };
+            CLIENT.lock().unwrap().wlr_layer_shell = unsafe {
+                wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version)
+            } as *mut WlrLayerShell;
         }
         "wl_output" => {
             let output = unsafe { wl_registry_bind(registry, name, &wl_output_interface, version) };
@@ -96,22 +91,19 @@ pub extern "C" fn wl_handle_global(
                 eprintln!("failed to bind to registry");
                 exit(1);
             }
-            unsafe {
-                (*client).bar = Some(bar::Bar::new(
-                    unsafe { &mut *client },
-                    output as *mut WlOutput,
-                ))
-            };
+            bar::Bar::new(output as *mut WlOutput);
         }
         "wl_seat" => {}
-        "zxdg_output_manager_v1" => unsafe {
-            (*client).xdg_output_manager = wl_registry_bind(
-                registry,
-                name,
-                &zxdg_output_manager_v1_interface,
-                ZXDG_OUTPUT_V1_NAME_SINCE_VERSION,
-            ) as *mut XdgOutputManager
-        },
+        "zxdg_output_manager_v1" => {
+            CLIENT.lock().unwrap().xdg_output_manager = unsafe {
+                wl_registry_bind(
+                    registry,
+                    name,
+                    &zxdg_output_manager_v1_interface,
+                    ZXDG_OUTPUT_V1_NAME_SINCE_VERSION,
+                )
+            } as *mut XdgOutputManager;
+        }
         _ => {}
     }
 }

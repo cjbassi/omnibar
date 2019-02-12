@@ -12,26 +12,37 @@ use crate::bindings::xdg::{
     zxdg_output_manager_v1_get_xdg_output, zxdg_output_v1_add_listener, XdgOutput,
     XdgOutputListener,
 };
-use crate::client::Client;
+use crate::client::CLIENT;
 use crate::NAME;
 use gtk_sys::{
-    gtk_button_new_with_label, gtk_container_add, gtk_widget_get_window, gtk_widget_realize,
-    gtk_widget_set_size_request, gtk_widget_show_all, gtk_window_new, gtk_window_resize, GtkWidget,
-    GtkWindow, GTK_WINDOW_TOPLEVEL,
+    gtk_widget_get_window, gtk_widget_realize, gtk_widget_set_size_request, gtk_widget_show_all,
+    gtk_window_new, gtk_window_resize, GtkWidget, GtkWindow, GTK_WINDOW_TOPLEVEL,
 };
+use lazy_static::lazy_static;
 use libc::{c_char, c_void, int32_t, uint32_t};
 use std::ffi::CString;
 use std::process::exit;
+use std::ptr::null_mut;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref BAR: Mutex<Bar> = Mutex::new(Bar {
+        widget: null_mut(),
+        surface: null_mut(),
+        output: null_mut()
+    });
+}
+
+unsafe impl Send for Bar {}
 
 pub struct Bar {
-    client: *mut Client,
     widget: *mut GtkWidget,
     surface: *mut WlSurface,
     output: *mut WlOutput,
 }
 
 impl Bar {
-    pub fn new(client: &mut Client, wl_output: *mut WlOutput) -> Bar {
+    pub fn new(wl_output: *mut WlOutput) {
         let gtk_widget_ptr = unsafe { gtk_window_new(GTK_WINDOW_TOPLEVEL) };
         unsafe { gtk_widget_realize(gtk_widget_ptr) };
         let gdk_window_ptr = unsafe { gtk_widget_get_window(gtk_widget_ptr) };
@@ -46,15 +57,19 @@ impl Bar {
             gdk_wayland_window_get_wl_surface(gdk_window_ptr as *mut gdk_wayland::GdkWindow)
         };
 
-        let mut bar = Bar {
-            client: client as *mut Client,
-            widget: gtk_widget_ptr,
-            surface: wl_surface_ptr,
-            output: wl_output,
-        };
+        {
+            let mut bar = BAR.lock().unwrap();
+            bar.widget = gtk_widget_ptr;
+            bar.surface = wl_surface_ptr;
+            bar.output = wl_output;
+        }
 
-        let xdg_output =
-            unsafe { zxdg_output_manager_v1_get_xdg_output(client.xdg_output_manager, wl_output) };
+        let xdg_output = unsafe {
+            zxdg_output_manager_v1_get_xdg_output(
+                CLIENT.lock().unwrap().xdg_output_manager,
+                wl_output,
+            )
+        };
         if xdg_output.is_null() {
             exit(1);
         }
@@ -62,10 +77,9 @@ impl Bar {
             zxdg_output_v1_add_listener(
                 xdg_output,
                 &XDG_OUTPUT_LISTENER as *const XdgOutputListener,
-                &mut bar as *mut _ as *mut c_void,
+                null_mut(),
             )
         };
-        bar
     }
 
     fn init(&mut self) {
@@ -74,7 +88,7 @@ impl Bar {
 
         let layer_surface = unsafe {
             wlr_layer_shell_get_layer_surface(
-                (*self.client).wlr_layer_shell,
+                CLIENT.lock().unwrap().wlr_layer_shell,
                 self.surface,
                 self.output,
                 WlrLayerShellLayer::Top,
@@ -82,24 +96,24 @@ impl Bar {
             )
         };
 
-        // unsafe {
-        //     zwlr_layer_surface_v1_add_listener(
-        //         layer_surface,
-        //         &WLR_LAYER_SURFACE_LISTENER as *const WlrLayerSurfaceListener,
-        //         self as *mut _ as *mut c_void,
-        //     )
-        // };
+        unsafe {
+            zwlr_layer_surface_v1_add_listener(
+                layer_surface,
+                &WLR_LAYER_SURFACE_LISTENER as *const WlrLayerSurfaceListener,
+                null_mut(),
+            )
+        };
 
-        // let anchor = WlrLayerSurfaceAnchor::Left
-        //     | WlrLayerSurfaceAnchor::Right
-        //     | WlrLayerSurfaceAnchor::Bottom;
-        // unsafe { zwlr_layer_surface_v1_set_anchor(layer_surface, anchor) };
-        // unsafe { zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, height) };
-        // unsafe { zwlr_layer_surface_v1_set_size(layer_surface, width, height as u32) };
+        let anchor = WlrLayerSurfaceAnchor::Left
+            | WlrLayerSurfaceAnchor::Right
+            | WlrLayerSurfaceAnchor::Bottom;
+        unsafe { zwlr_layer_surface_v1_set_anchor(layer_surface, anchor) };
+        unsafe { zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, height) };
+        unsafe { zwlr_layer_surface_v1_set_size(layer_surface, width, height as u32) };
 
-        // unsafe { wl_surface_commit(self.surface) };
+        unsafe { wl_surface_commit(self.surface) };
 
-        // self.setup_widgets();
+        self.setup_widgets();
     }
 
     fn setup_widgets(&self) {
@@ -111,44 +125,41 @@ impl Bar {
 
 #[no_mangle]
 pub extern "C" fn xdg_handle_logical_position(
-    data: *mut c_void,
-    xdg_output: *mut XdgOutput,
-    x: int32_t,
-    y: int32_t,
+    _data: *mut c_void,
+    _xdg_output: *mut XdgOutput,
+    _x: int32_t,
+    _y: int32_t,
 ) {
 }
 
 #[no_mangle]
 pub extern "C" fn xdg_handle_logical_size(
-    data: *mut c_void,
-    xdg_output: *mut XdgOutput,
-    width: int32_t,
-    height: int32_t,
+    _data: *mut c_void,
+    _xdg_output: *mut XdgOutput,
+    _width: int32_t,
+    _height: int32_t,
 ) {
 }
 
 #[no_mangle]
-pub extern "C" fn xdg_handle_done(data: *mut c_void, xdg_output: *mut XdgOutput) {}
+pub extern "C" fn xdg_handle_done(_data: *mut c_void, _xdg_output: *mut XdgOutput) {}
 
 #[allow(dead_code)]
 #[no_mangle]
 pub extern "C" fn xdg_handle_name(
-    data: *mut c_void,
-    xdg_output: *mut XdgOutput,
-    name: *const c_char,
+    _data: *mut c_void,
+    _xdg_output: *mut XdgOutput,
+    _name: *const c_char,
 ) {
-    if data.is_null() {
-        exit(1);
-    }
-    let bar_ptr = data as *mut Bar;
-    unsafe { (*bar_ptr).init() };
+    let mut bar = BAR.lock().unwrap();
+    bar.init();
 }
 
 #[no_mangle]
 pub extern "C" fn xdg_handle_description(
-    data: *mut c_void,
-    xdg_output: *mut XdgOutput,
-    description: *const c_char,
+    _data: *mut c_void,
+    _xdg_output: *mut XdgOutput,
+    _description: *const c_char,
 ) {
 }
 
@@ -162,46 +173,26 @@ pub const XDG_OUTPUT_LISTENER: XdgOutputListener = XdgOutputListener {
 
 #[no_mangle]
 pub extern "C" fn wlr_layer_surface_configure(
-    data: *mut libc::c_void,
+    _data: *mut libc::c_void,
     surface: *mut WlrLayerSurface,
     serial: libc::uint32_t,
     w: uint32_t,
     h: uint32_t,
 ) {
-    let bar_ptr = data as *mut Bar;
-    unsafe {
-        zwlr_layer_surface_v1_ack_configure((*bar_ptr).surface as *mut WlrLayerSurface, serial)
-    };
-    unsafe { gtk_widget_set_size_request((*bar_ptr).widget, w as int32_t, h as int32_t) };
-    unsafe {
-        gtk_window_resize(
-            (*bar_ptr).widget as *mut GtkWindow,
-            w as int32_t,
-            h as int32_t,
-        )
-    };
+    let bar = BAR.lock().unwrap();
+    unsafe { zwlr_layer_surface_v1_ack_configure(surface, serial) };
+    unsafe { gtk_widget_set_size_request(bar.widget, w as int32_t, h as int32_t) };
+    unsafe { gtk_window_resize(bar.widget as *mut GtkWindow, w as int32_t, h as int32_t) };
 }
 
 #[no_mangle]
-pub extern "C" fn wlr_layer_surface_closed(data: *mut libc::c_void, surface: *mut WlrLayerSurface) {
+pub extern "C" fn wlr_layer_surface_closed(
+    _data: *mut libc::c_void,
+    _surface: *mut WlrLayerSurface,
+) {
 }
 
 pub const WLR_LAYER_SURFACE_LISTENER: WlrLayerSurfaceListener = WlrLayerSurfaceListener {
     configure: wlr_layer_surface_configure as *const _,
     closed: wlr_layer_surface_closed as *const _,
 };
-
-// unsafe {
-//     gtk_sys::gtk_window_set_default_size(
-//         gtk_widget_ptr as *mut gtk_sys::GtkWindow,
-//         1920,
-//         50,
-//     )
-// };
-
-// let button = unsafe { gtk_button_new_with_label(CString::new("hello").unwrap().as_ptr()) };
-// unsafe { gtk_container_add(gtk_widget_ptr as *mut gtk_sys::GtkContainer, button) };
-
-// unsafe { wl_surface_commit(wl_surface_ptr) };
-
-// unsafe { wl_surface_commit(wl_surface_ptr) };

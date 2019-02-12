@@ -5,5 +5,5 @@ mod client;
 const NAME: &str = env!("CARGO_PKG_NAME");
 
 fn main() {
-    client::Client::new();
+    client::init();
 }

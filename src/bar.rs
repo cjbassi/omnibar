@@ -34,7 +34,7 @@ lazy_static! {
 }
 
 pub struct Bar {
-    widget: *mut gtk_sys::GtkWidget,
+    window: *mut gtk_sys::GtkWidget,
     surface: *mut WlSurface,
     output: *mut WlOutput,
     width: u32,
@@ -57,7 +57,7 @@ pub fn init(wl_output: *mut WlOutput) {
     check_null!(wl_surface_ptr);
 
     BARS.lock().unwrap().push(Bar {
-        widget: gtk_widget_ptr,
+        window: gtk_widget_ptr,
         surface: wl_surface_ptr,
         output: wl_output,
         width: 1920,
@@ -134,7 +134,18 @@ pub extern "C" fn xdg_handle_name(
 
     unsafe { wl_surface_commit(bar.surface) };
 
-    unsafe { gtk_widget_show_all(bar.widget) };
+    let box_ = unsafe { gtk_sys::gtk_hbox_new(1, 0) };
+    let button = unsafe {
+        gtk_sys::gtk_radio_button_new_with_label(
+            null_mut(),
+            CString::new("button1").unwrap().as_ptr(),
+        )
+    };
+    unsafe { gtk_sys::gtk_box_pack_start(box_ as *mut gtk_sys::GtkBox, button, 1, 1, 0) };
+    unsafe { gtk_sys::gtk_container_add(bar.window as *mut gtk_sys::GtkContainer, box_) };
+
+    unsafe { gtk_sys::gtk_widget_show(button) };
+    unsafe { gtk_sys::gtk_widget_show(bar.window) };
 }
 
 #[no_mangle]
@@ -164,10 +175,10 @@ pub extern "C" fn wlr_layer_surface_configure(
     check_null!(surface);
     let bar = &BARS.lock().unwrap()[0];
     unsafe { zwlr_layer_surface_v1_ack_configure(surface, serial) };
-    unsafe { gtk_widget_set_size_request(bar.widget, w as int32_t, h as int32_t) };
+    unsafe { gtk_widget_set_size_request(bar.window, w as int32_t, h as int32_t) };
     unsafe {
         gtk_window_resize(
-            bar.widget as *mut gtk_sys::GtkWindow,
+            bar.window as *mut gtk_sys::GtkWindow,
             w as int32_t,
             h as int32_t,
         )

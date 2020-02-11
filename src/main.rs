@@ -4,8 +4,6 @@ use gtk_layer_shell_rs as gtk_layer_shell;
 
 use std::env::args;
 
-// This is analogous to:
-// https://github.com/wmww/gtk-layer-shell/blob/master/example/example.c
 fn activate(application: &gtk::Application) {
     // Create a normal GTK window however you like
     let window = gtk::ApplicationWindow::new(application);
@@ -23,12 +21,6 @@ fn activate(application: &gtk::Application) {
     // Push other windows out of the way
     gtk_layer_shell::auto_exclusive_zone_enable(&window);
 
-    // The margins are the gaps around the window's edges
-    // Margins and anchors can be set like this...
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Left, 40);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Right, 40);
-    gtk_layer_shell::set_margin(&window, gtk_layer_shell::Edge::Top, 20);
-    // ... or like this
     // Anchors are if the window is pinned to each edge of the output
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Left, true);
     gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Right, true);

@@ -5,8 +5,3 @@ authors = ["Caleb Bassi <calebjbassi@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-libc = "0.2.48"
-bitflags = "1.0.4"
-gtk-sys = "0.7.0"
-gdk-sys = "0.7.0"
-lazy_static = "1.2.0"

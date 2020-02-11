@@ -1,8 +1,11 @@
+use std::env::args;
+
 use gio::prelude::*;
 use gtk::prelude::*;
 use gtk_layer_shell_rs as gtk_layer_shell;
 
-use std::env::args;
+const NAME: &str = env!("CARGO_PKG_NAME");
+const AUTHOR: &str = "cjbassi";
 
 fn activate(application: &gtk::Application) {
     // Create a normal GTK window however you like
@@ -36,9 +39,11 @@ fn activate(application: &gtk::Application) {
 }
 
 fn main() {
-    let application =
-        gtk::Application::new(Some("com.subgraph.gtk-layer-example"), Default::default())
-            .expect("Initialization failed...");
+    let application = gtk::Application::new(
+        Some(&format!("com.{}.{}", AUTHOR, NAME)),
+        Default::default(),
+    )
+    .expect("Initialization failed...");
 
     application.connect_activate(|app| {
         activate(app);

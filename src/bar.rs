@@ -1,4 +1,5 @@
 use gtk::prelude::*;
+use gtk::{Box as GtkBox, BoxExt, Orientation};
 use gtk_layer_shell_rs as gtk_layer_shell;
 
 use crate::module::Module;
@@ -34,9 +35,20 @@ impl Bar {
         gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Top, false);
         gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Bottom, true);
 
+        let gtk_box = GtkBox::new(Orientation::Horizontal, 0);
+        let gtk_box_left = GtkBox::new(Orientation::Horizontal, 0);
+        let gtk_box_center = GtkBox::new(Orientation::Horizontal, 0);
+        let gtk_box_right = GtkBox::new(Orientation::Horizontal, 0);
+
+        gtk_box.pack_start(&gtk_box_left, false, false, 0);
+        gtk_box.set_center_widget(Some(&gtk_box_center));
+        gtk_box.pack_end(&gtk_box_right, false, false, 0);
+
         let clock = Box::new(Clock::new());
 
-        window.add(&clock.get_label());
+        gtk_box_center.add(&clock.get_label());
+
+        window.add(&gtk_box);
         window.set_border_width(12);
         window.show_all();
 

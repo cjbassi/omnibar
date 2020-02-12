@@ -5,6 +5,8 @@ authors = ["Caleb Bassi <calebjbassi@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-gtk-layer-shell-rs = { git = "https://github.com/subgraph/gtk-layer-shell-rs" }
-gtk = { git = "https://github.com/gtk-rs/gtk" }
+chrono = "0.4.10"
 gio = { git = "https://github.com/gtk-rs/gio" }
+glib = { git = "https://github.com/gtk-rs/glib" }
+gtk = { git = "https://github.com/gtk-rs/gtk" }
+gtk-layer-shell-rs = { git = "https://github.com/subgraph/gtk-layer-shell-rs" }

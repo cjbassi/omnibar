@@ -42,8 +42,14 @@ impl Bar {
 
         let mut clock = Clock::new();
         clock.update();
-
         gtk_box_center.add(clock.get_label());
+
+        let tick = move || {
+            clock.update();
+            glib::Continue(true)
+        };
+
+        gtk::timeout_add_seconds(1, tick);
 
         window.add(&gtk_box);
         window.set_border_width(12);

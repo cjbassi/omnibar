@@ -1,3 +1,4 @@
+use chrono::Local;
 use gtk::prelude::*;
 use gtk::Label;
 
@@ -18,7 +19,7 @@ impl Clock {
 impl Module for Clock {
     fn update(&mut self) {
         self.label
-            .set_markup("<span font_desc=\"20.0\">GTK Layer Shell example!</span>");
+            .set_markup(&Local::now().format("%Y-%m-%d %H:%M:%S").to_string());
     }
 
     fn get_label(&self) -> &Label {

@@ -9,19 +9,18 @@ use gio::prelude::*;
 const NAME: &str = env!("CARGO_PKG_NAME");
 const AUTHOR: &str = "cjbassi";
 
-fn activate(application: &gtk::Application) {
+fn build_ui(application: &gtk::Application) {
     bar::Bar::new(application);
 }
 
 fn main() {
-    let application = gtk::Application::new(
-        Some(&format!("com.{}.{}", AUTHOR, NAME)),
-        Default::default(),
-    )
-    .expect("Initialization failed...");
+    let gtk_name = format!("com.github.{}.{}", AUTHOR, NAME);
+
+    let application = gtk::Application::new(Some(&gtk_name), Default::default())
+        .expect("Initialization failed...");
 
     application.connect_activate(|app| {
-        activate(app);
+        build_ui(app);
     });
 
     application.run(&args().collect::<Vec<_>>());

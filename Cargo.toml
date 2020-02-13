@@ -5,8 +5,13 @@ authors = ["Caleb Bassi <calebjbassi@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+battery = "0.7.5"
 chrono = "0.4.10"
 gio = { git = "https://github.com/gtk-rs/gio" }
 glib = { git = "https://github.com/gtk-rs/glib" }
 gtk = { git = "https://github.com/gtk-rs/gtk" }
 gtk-layer-shell-rs = { git = "https://github.com/subgraph/gtk-layer-shell-rs" }
+i3ipc = "0.10.1"
+libpulse-binding = "2.15.0"
+psutil = { version = "3.0.1", default-features = false, features = ["cpu", "disk", "memory"] }
+strfmt = "0.1.6"

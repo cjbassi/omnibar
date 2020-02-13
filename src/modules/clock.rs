@@ -6,20 +6,22 @@ use crate::module::Module;
 
 pub struct Clock {
     label: Label,
+    format: String,
 }
 
 impl Clock {
-    pub fn new() -> Self {
+    pub fn new(format: &str) -> Self {
         let label = gtk::Label::new(None);
+        let format = format.to_string();
 
-        Self { label }
+        Self { label, format }
     }
 }
 
 impl Module for Clock {
     fn update(&mut self) {
         self.label
-            .set_markup(&Local::now().format("%Y-%m-%d %H:%M:%S").to_string());
+            .set_markup(&Local::now().format(&self.format).to_string());
     }
 
     fn get_label(&self) -> &Label {

@@ -1,9 +1,11 @@
+use std::thread;
+
 use gtk::prelude::*;
 use gtk::{Box as GtkBox, BoxExt, Orientation};
 use gtk_layer_shell_rs as gtk_layer_shell;
 
 use crate::module::Module;
-use crate::modules::Clock;
+use crate::modules::*;
 
 pub struct Bar {}
 
@@ -40,16 +42,56 @@ impl Bar {
         gtk_box.set_center_widget(Some(&gtk_box_center));
         gtk_box.pack_end(&gtk_box_right, false, false, 0);
 
-        let mut clock = Clock::new();
-        clock.update();
-        gtk_box_center.add(clock.get_label());
+        let mut battery = Battery::new("{percent:2.0}");
+        let mut clock1 = Clock::new("%a");
+        let mut cpu = Cpu::new("{percent:2.0}");
+        let mut disk = Disk::new("{percent:2.0}", "/");
+        let mut memory = Memory::new("{percent:2.0}");
+        let mut pulseaudio = PulseAudio::new("{percent:2.0}");
+        let mut sway = Sway::new();
+
+        battery.update();
+        clock1.update();
+        cpu.update();
+        disk.update();
+        memory.update();
+        pulseaudio.update();
+        sway.update();
+
+        gtk_box_left.pack_start(sway.get_label(), false, false, 0);
+        gtk_box_center.pack_start(clock1.get_label(), false, false, 0);
+        gtk_box_right.pack_end(disk.get_label(), false, false, 0);
+        gtk_box_right.pack_end(battery.get_label(), false, false, 0);
+        gtk_box_right.pack_end(cpu.get_label(), false, false, 0);
+        gtk_box_right.pack_end(memory.get_label(), false, false, 0);
+        gtk_box_right.pack_end(pulseaudio.get_label(), false, false, 0);
 
         let tick = move || {
-            clock.update();
+            battery.update();
+            clock1.update();
+            cpu.update();
+            disk.update();
+            memory.update();
+            pulseaudio.update();
+
             glib::Continue(true)
         };
 
         gtk::timeout_add_seconds(1, tick);
+
+        let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+
+        thread::spawn(move || {
+            for _event in Sway::get_listener().listen() {
+                tx.send(()).expect("Couldn't send data to channel");
+            }
+        });
+
+        rx.attach(None, move |_| {
+            sway.update();
+
+            glib::Continue(true)
+        });
 
         window.add(&gtk_box);
         window.set_border_width(12);

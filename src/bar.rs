@@ -4,13 +4,14 @@ use gtk::prelude::*;
 use gtk::{Box as GtkBox, BoxExt, Orientation};
 use gtk_layer_shell_rs as gtk_layer_shell;
 
+use crate::config::Config;
 use crate::module::Module;
 use crate::modules::*;
 
 pub struct Bar {}
 
 impl Bar {
-    pub fn new(window: gtk::ApplicationWindow) -> Self {
+    pub fn new(window: gtk::ApplicationWindow, config: Config) -> Self {
         // Before the window is first realized, set it up to be a layer surface
         gtk_layer_shell::init_for_window(&window);
 

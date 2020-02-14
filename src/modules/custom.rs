@@ -13,6 +13,8 @@ pub struct Custom {
 impl Custom {
     pub fn new(name: &str, text: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("custom");
+        label.get_style_context().add_class(name);
         let name = name.to_string();
         let text = text.to_string();
 

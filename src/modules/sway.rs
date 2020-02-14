@@ -15,13 +15,10 @@ pub struct Sway {
 impl Sway {
     pub fn new() -> Self {
         let label = gtk::Label::new(None);
-
+        label.set_widget_name("sway");
         let connection = I3Connection::connect().unwrap();
 
-        Self {
-            label,
-            connection,
-        }
+        Self { label, connection }
     }
 
     pub fn get_listener() -> I3EventListener {

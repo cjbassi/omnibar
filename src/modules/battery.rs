@@ -18,6 +18,7 @@ pub struct Battery {
 impl Battery {
     pub fn new(format: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("battery");
         let format = format.to_string();
         let manager = Manager::new().unwrap();
         let battery = manager.batteries().unwrap().next().unwrap().unwrap();

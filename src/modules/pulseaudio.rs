@@ -15,6 +15,7 @@ pub struct PulseAudio {
 impl PulseAudio {
     pub fn new(format: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("pulseaudio");
         let format = format.to_string();
 
         Self { label, format }

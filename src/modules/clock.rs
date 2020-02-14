@@ -12,6 +12,7 @@ pub struct Clock {
 impl Clock {
     pub fn new(format: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("clock");
         let format = format.to_string();
 
         Self { label, format }

@@ -13,5 +13,6 @@ gtk = { git = "https://github.com/gtk-rs/gtk" }
 gtk-layer-shell-rs = { git = "https://github.com/subgraph/gtk-layer-shell-rs" }
 i3ipc = "0.10.1"
 libpulse-binding = "2.15.0"
+platform-dirs = "0.2.0"
 psutil = { version = "3.0.1", default-features = false, features = ["cpu", "disk", "memory"] }
 strfmt = "0.1.6"

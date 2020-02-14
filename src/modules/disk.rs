@@ -17,6 +17,7 @@ pub struct Disk {
 impl Disk {
     pub fn new(format: &str, path: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("disk");
         let format = format.to_string();
         let path = path.to_string();
 

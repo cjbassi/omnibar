@@ -10,14 +10,7 @@ use crate::modules::*;
 pub struct Bar {}
 
 impl Bar {
-    pub fn new(application: &gtk::Application) -> Self {
-        // Create a normal GTK window however you like
-        let window = gtk::ApplicationWindow::new(application);
-        window.connect_delete_event(|_, _| {
-            gtk::main_quit();
-            Inhibit(false)
-        });
-
+    pub fn new(window: gtk::ApplicationWindow) -> Self {
         // Before the window is first realized, set it up to be a layer surface
         gtk_layer_shell::init_for_window(&window);
 
@@ -32,6 +25,8 @@ impl Bar {
         gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Right, true);
         gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Top, false);
         gtk_layer_shell::set_anchor(&window, gtk_layer_shell::Edge::Bottom, true);
+
+        window.set_widget_name("waybar");
 
         let gtk_box = GtkBox::new(Orientation::Horizontal, 0);
         let gtk_box_left = GtkBox::new(Orientation::Horizontal, 0);

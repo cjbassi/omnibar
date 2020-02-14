@@ -17,6 +17,7 @@ pub struct Cpu {
 impl Cpu {
     pub fn new(format: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("cpu");
         let format = format.to_string();
         let collector = cpu::CpuPercentCollector::new().unwrap();
 

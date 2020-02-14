@@ -15,6 +15,7 @@ pub struct Memory {
 impl Memory {
     pub fn new(format: &str) -> Self {
         let label = gtk::Label::new(None);
+        label.set_widget_name("memory");
         let format = format.to_string();
 
         Self { label, format }
